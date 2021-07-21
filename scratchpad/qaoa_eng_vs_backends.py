@@ -272,7 +272,12 @@ def cook_raw_report(raw_reports, task_type = "QAOAEnergyExpectation"):
 if __name__ == '__main__':
     
     # Should I use any or all?
-    raw_reports = qaoa_energy_benchmarking(repeat = 7)
-    cooked_reports = cook_raw_report(raw_reports)
-    with open("sample.json", "w") as outfile:
-        json.dump(cooked_reports, outfile, indent = 4, sort_keys= True)
+    # raw_reports = qaoa_energy_benchmarking(repeat = 7)
+    # cooked_reports = cook_raw_report(raw_reports)
+    # with open("sample.json", "w") as outfile:
+    #     json.dump(cooked_reports, outfile, indent = 4, sort_keys= True)
+    
+    G, gamma, beta = get_test_problem(10, 50, 3, type = "random")
+    curr_backend = get_backend("cupy")
+    sim = QAOAQtreeSimulator(QtreeQAOAComposer, backend = curr_backend)
+    res = sim.energy_expectation(G, gamma=gamma, beta=beta)
