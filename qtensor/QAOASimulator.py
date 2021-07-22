@@ -123,7 +123,7 @@ class QAOASimulatorSymmetryAccelerated(QAOASimulator):
         p = len(gamma)
         assert(len(beta) == p)
 
-        eorbits, maxnnodes_lightcone = get_edge_orbits_lightcones(G,p)
+        eorbits, _ = get_edge_orbits_lightcones(G,p)
         if len(eorbits) == G.number_of_edges():
             warnings.warn(f"There is no speedup from leveraging the symmetries in lightcone structure, size of the largest lightcone: {maxnnodes_lightcone}\n Use QAOASimulator instead", RuntimeWarning)
 

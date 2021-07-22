@@ -1,6 +1,9 @@
 from collections import defaultdict
 from qtensor.tools.lazy_import import pynauty
 import networkx as nx
+from multiprocessing import Pool
+from functools import partial
+import psutil
 
 from qtensor.utils import get_edge_subgraph
 
@@ -45,21 +48,31 @@ def graph_cert(G):
     cert = pynauty.certificate(g)
     return cert
 
+def get_cert_e_tuples(e,G=None,p=None):
+    """A helper function for multiprocessing
+    """
+    subgraph = relabel_edge_first(get_edge_subgraph(G, e, p), e)
+    cert = graph_cert(subgraph)
+    return e,cert
+
 
 def get_edge_orbits_lightcones(G,p):
     """Takes graph G and number of QAOA steps p
     returns unique subgraphs that QAOA sees
     dict: {orbit_id : [list of edges in orbit]} 
     and maximum number of nodes in a lightcone subgraph
-    if maxnnodes == G.number_of_nodes(), this simply becomes edge orbits
     """
-    maxnnodes = -1
 
     eorbits = defaultdict(list)
     # for each edge construct the light cone subgraph and compute certificate  
-    for e in G.edges():
-        subgraph = relabel_edge_first(get_edge_subgraph(G, e, p), e)
-        cert = graph_cert(subgraph)
+    if G.number_of_edges() > 1000:
+        # accelerate with multiprocessing if computing for a large graph
+        with Pool(psutil.cpu_count()) as pool:
+            certs_e_tuples = pool.map(partial(get_cert_e_tuples, G=G,p=p), G.edges())
+    else:
+        certs_e_tuples = [get_cert_e_tuples(e,G=G,p=p) for e in G.edges()]
+
+    for e,cert in certs_e_tuples:
         eorbits[cert].append(e)
 
     eorbits_integer_keys = {}
@@ -67,6 +80,4 @@ def get_edge_orbits_lightcones(G,p):
         eorbits_integer_keys[i] = edges
 
     assert(len(eorbits_integer_keys) == len(eorbits))
-    return eorbits_integer_keys, maxnnodes
-
-
+    return eorbits_integer_keys, None 
